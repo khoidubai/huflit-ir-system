@@ -1,0 +1,62 @@
+# Virtual Environment
+IR_HUFLIT/
+venv/
+.venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Data & Index (Quan trọng)
+data/raw/
+data/index/
+data/processed/corpus_raw.json
+# data/processed/corpus.json  <-- Mở comment này nếu file này quá lớn (>50MB)
+*.pkl
+*.npz
+*.db
+*.sqlite3
+
+# Logs
+*.log
+crawl_log.txt
+search_log.jsonl
+feedback.jsonl
+
+# Configuration
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
