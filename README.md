@@ -281,10 +281,6 @@ Styling đơn giản, màu trường HUFLIT (xanh navy). Responsive mobile. High
     { "type": "MAJOR", "value": "Công nghệ thông tin" }
   ],
   "tokens": ["trường", "đại_học", "ngoại_ngữ", "tin_học", "thông_báo"],
-  "word_count": 342,
-  "crawled_at": "2024-11-01T08:30:00Z",
-  "lang": "vi",
-  "source": "portal.huflit.edu.vn"
 }
 ```
 
@@ -598,10 +594,9 @@ Exact Match        RAG Pipeline
   (ghép title + snippet top-3 docs)
         │
         ▼
-  Qwen2.5-7B / Gemini API
+  Qwen2.5-7B -> có thể triển khai local hoặc API
   (sinh câu trả lời tiếng Việt mượt)
         │ SSE streaming
         ▼
   Frontend (Vanilla JS)
   (search bar → result cards → LM answer box)
-```mermaid
