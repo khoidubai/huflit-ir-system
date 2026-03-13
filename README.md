@@ -99,7 +99,7 @@ huflit-ir-system/
 ### 2.1 crawler/
 
 **spider.py**
-Crawler chính. Bắt đầu từ danh sách URL seed trong config.py, crawl đệ quy tất cả trang con trong domain portal.huflit.edu.vn. Tuân thủ robots.txt, rate limit 1 request/2 giây, max depth 3 cấp. Lưu raw HTML theo ngày vào data/raw/. Dùng requests + BeautifulSoup4.
+Crawler chính. Bắt đầu từ danh sách URL seed trong config.py, crawl đệ quy tất cả trang con trong domain portal.huflit.edu.vn. Tuân thủ rate limit 1 request/2 giây, max depth 3 cấp. Lưu raw HTML theo ngày vào data/raw/. Dùng requests + BeautifulSoup4.
 
 **parser.py**
 Nhận raw HTML, trích xuất các trường: title (lấy từ thẻ h1 hoặc title), url, date (tìm trong meta hoặc nội dung), content (loại bỏ nav/header/footer/script, chỉ giữ main content), category (suy ra từ URL path hoặc breadcrumb). Output là list dict Python.
