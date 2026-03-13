@@ -256,13 +256,12 @@ Styling đơn giản, màu trường HUFLIT (xanh navy). Responsive mobile. High
 
 ## 3. CẤU TRÚC DATASET (corpus.json)
 
-### 3.1 Nguồn dữ liệu – các trang ưu tiên crawl từ portal.huflit.edu.vn
+### 3.1 Nguồn dữ liệu – các category ưu tiên crawl từ portal.huflit.edu.vn
 
 - Tuyển sinh, Học phí, Lịch thi, Lịch học, Đăng ký môn học
 - Thông báo chung, Kế hoạch đào tạo, Lịch nghỉ
 - Tốt nghiệp, Học bổng, Chứng chỉ ngoại ngữ
-- Ký túc xá, Công tác sinh viên, Dịch vụ hành chính
-- Hợp tác quốc tế, Câu lạc bộ, Hoạt động sinh viên
+- Công tác sinh viên, Dịch vụ hành chính
 
 ### 3.2 Schema một document trong corpus.json
 
