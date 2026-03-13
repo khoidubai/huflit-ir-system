@@ -299,28 +299,21 @@ Styling đơn giản, màu trường HUFLIT (xanh navy). Responsive mobile. High
 | GRADE | GPA hoặc điểm | GPA 3.6, điểm 2.0 |
 | CERTIFICATE | Chứng chỉ | B1, IELTS 6.0, TOEFL 80 |
 | MAJOR | Ngành học | Công nghệ thông tin, Ngôn ngữ Anh |
-| DEPARTMENT | Phòng ban | Phòng Đào tạo, Phòng CTSV |
 | CREDIT | Số tín chỉ | 120 tín chỉ, 12 tín chỉ |
 | ACADEMIC_YEAR | Năm học | 2024-2025 |
 | PERCENTAGE | Phần trăm | 100% học phí, 50% chi phí |
 
-### 3.4 Danh sách category chuẩn
+### 3.4 Danh sách category được giới hạn trong phạm vi đề tài
 
 | category | URL pattern | Ví dụ trang |
 |----------|-------------|-------------|
+| Thông báo chung | /thong-bao/* | Nghỉ lễ, sự kiện chung |
 | Tuyển sinh | /tuyen-sinh/* | Chỉ tiêu, phương thức, ngành |
 | Học phí | /tai-chinh/*, /hoc-phi/* | Mức phí, hạn nộp |
-| Lịch thi | /lich-thi/* | Lịch thi kết thúc học phần |
-| Lịch học | /lich-hoc/* | Thời khóa biểu |
 | Đăng ký môn | /dang-ky-mon/* | Thời gian, hướng dẫn đăng ký |
 | Học bổng | /hoc-bong/* | Điều kiện, mức học bổng |
 | Tốt nghiệp | /tot-nghiep/* | Điều kiện, lịch xét, lễ trao bằng |
-| Đào tạo | /dao-tao/* | Ngành, tín chỉ, chương trình |
-| Ký túc xá | /ktx/* | Giá phòng, đăng ký |
-| Thông báo | /thong-bao/* | Nghỉ lễ, sự kiện chung |
-| Hợp tác quốc tế | /quoc-te/* | Trao đổi, học bổng nước ngoài |
 | Chứng chỉ | /chung-chi/* | Ngoại ngữ, tin học |
-| Hỗ trợ sinh viên | /ctsv/* | Thủ tục, giấy tờ, câu lạc bộ |
 
 ---
 
