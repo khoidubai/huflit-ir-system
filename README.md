@@ -540,11 +540,8 @@ POST /search
 ## 10. LƯU Ý QUAN TRỌNG KHI TRIỂN KHAI
 
 - **Underthesea** cần cài thêm model: `underthesea download`. Nếu server không có internet, pre-download trước.
-- **FAISS** cần cài `faiss-cpu` không phải `faiss-gpu` trừ khi có GPU.
 - **sentence-transformers** lần đầu chạy sẽ tự download model (~400MB). Pre-download nếu server offline.
-- **corpus.json** nên commit vào Git để team có data đồng nhất. Nếu quá lớn thì dùng Git LFS.
 - **Inverted index** và TF-IDF matrix phải được rebuild mỗi khi corpus thay đổi (chạy lại build_index.py).
-- Khi crawl thật cần kiểm tra xem HUFLIT portal có chặn bot không. Nếu có thì cần thêm cookie/session từ trình duyệt vào config.py.
 - Stopwords tiếng Việt: dùng file stopwords_vi.txt từ thư viện underthesea hoặc tự build từ corpus (top-50 terms phổ biến nhất thường là stopwords).
 
 
