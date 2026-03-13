@@ -543,97 +543,59 @@ POST /search
 - **Inverted index** và TF-IDF matrix phải được rebuild mỗi khi corpus thay đổi (chạy lại build_index.py).
 - Stopwords tiếng Việt: dùng file stopwords_vi.txt từ thư viện underthesea hoặc tự build từ corpus (top-50 terms phổ biến nhất thường là stopwords).
 
-## System Architecture
+## KIẾN TRÚC TỔNG QUAN:
 
 ```mermaid
-flowchart TD
 
-%% =========================
-%% LAYER 1 - QUERY PROCESSING
-%% =========================
-subgraph L1[Query Processing Layer]
-A[User Query<br/>text / tiếng Việt]
-
-B[Query Processor<br/>
-- lowercase<br/>
-- tokenize underthesea<br/>
-- remove stopwords<br/>
-- synonym expansion]
-
-C[Entity Extractor<br/>
-DATE • MONEY • SEMESTER<br/>
-MAJOR • CERT • DEPARTMENT]
-
-A --> B
-B --> C
-end
-
-
-%% =========================
-%% LAYER 2 - RETRIEVAL
-%% =========================
-subgraph L2[Retrieval & Ranking Layer]
-
-D{Query Router<br/>regex + entity}
-
-E[Exact Match<br/>Phrase Search]
-
-F[Dense Retrieval<br/>bge-m3 + ChromaDB]
-
-G[Sparse Retrieval<br/>BM25S]
-
-H[RRF Merge<br/>k = 60]
-
-I[Rerank<br/>bge-reranker-v2-m3<br/>top-4]
-
-J[Category Boost<br/>entity → category]
-
-K[Hybrid Scorer<br/>
-0.30 TF-IDF<br/>
-0.40 BM25<br/>
-0.20 LM Dirichlet<br/>
-+ entity boost]
-
-C --> D
-D -->|Exact| E
-D -->|RAG| F
-
-F --> G
-G --> H
-H --> I
-I --> J
-
-E --> K
-J --> K
-
-end
-
-
-%% =========================
-%% LAYER 3 - LLM ANSWER
-%% =========================
-subgraph L3[Answer Generation Layer]
-
-L[Phase 1 Output<br/>
-Top-4 Ranked Links<br/>
-title • url • snippet • score]
-
-M[Context Builder<br/>
-title + snippet<br/>top-3 docs]
-
-N[LLM Generator<br/>
-Qwen2.5-7B<br/>
-local or API]
-
-O[SSE Streaming]
-
-P[Frontend UI<br/>
-Vanilla JS]
-
-end
-
-
-K --> L
+User Query (text / tiếng Việt)
+        │
+        ▼
+  Query Processor
+  (lowercase → tokenize underthesea → remove stopwords → synonym expand)
+        │
+        ▼
+  Entity Extractor
+  (DATE / MONEY / SEMESTER / MAJOR / CERT / DEPARTMENT)
+        │
+        ▼
+  Query Router (regex + entity type)
+   ┌────┴────┐
+   │                   │
+Exact Match        RAG Pipeline
+(phrase search)    (Hybrid)
+   │                   │
+   │         Dense (bge-m3 + ChromaDB)
+   │         Sparse (BM25S)
+   │         RRF Merge (k=60)
+   │         Rerank (bge-reranker-v2-m3, top-4)
+   │         Category Boost (entity → category)
+   │                   │
+   └────┬──────────────┘
+        │
+        ▼
+  Hybrid Scorer
+  (0.30×TF-IDF + 0.40×BM25 + 0.20×LM Dirichlet + entity_boost)
+        │
+        ▼
+  ┌─────────────────────────┐
+  │     Phase 1 Output      │
+  │  Top-4 Ranked Links     │
+  │  {title, url, snippet,  │
+  │   score, category,      │
+  │   entities}             │
+  └─────────────────────────┘
+        │
+        ▼  (Phase 2 — LLM_ENABLED=true)
+  Context Builder
+  (ghép title + snippet top-3 docs)
+        │
+        ▼
+  Qwen2.5-7B -> có thể triển khai local hoặc API
+  (sinh câu trả lời tiếng Việt mượt)
+        │ SSE streaming
+        ▼
+  Frontend (Vanilla JS)
+  (search bar → result cards → LM answer box)
 L --> M
 M --> N
 N --> O
