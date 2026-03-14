@@ -60,15 +60,30 @@ class RankedRetrieval:
                 scores[doc_id] = scores.get(doc_id, 0.0) + score
         return scores
 
-    def get_all_scores(self, query_tokens):
+    def get_candidates(self, query_tokens, top_k=100):
         tfidf_scores = self.calculate_tfidf_scores(query_tokens)
         bm25_scores = self.calculate_bm25_scores(query_tokens)
         
         all_doc_ids = set(tfidf_scores.keys()) | set(bm25_scores.keys())
-        results = {}
+        candidates = []
         for d_id in all_doc_ids:
-            results[d_id] = {
-                'tfidf': tfidf_scores.get(d_id, 0.0),
-                'bm25': bm25_scores.get(d_id, 0.0)
-            }
-        return results
+            # Simple average for the initial sparse retrieval stage
+            # The real tuning happens in RRF and Reranker
+            t_score = tfidf_scores.get(d_id, 0.0)
+            b_score = bm25_scores.get(d_id, 0.0)
+            
+            # Normalize bm25 roughly for simple addition (optional, but good for base Candidate recall)
+            # Usually BM25 is higher, so we can just add them or use them natively for RRF
+            score = t_score + b_score 
+            
+            candidates.append({
+                "doc_id": d_id,
+                "score": score,
+                "tfidf": t_score,
+                "bm25": b_score
+            })
+            
+        # Sort and return top-K candidates
+        candidates.sort(key=lambda x: x["score"], reverse=True)
+        return candidates[:top_k]
+

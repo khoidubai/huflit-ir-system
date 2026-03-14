@@ -1,3 +1,82 @@
-""" 
-SPA đơn giản. Có search bar, nút search, khu hiển thị kết quả (card: title link + snippet + category badge + score bar). Phase 2 thêm khu hiển thị LM answer ở trên cùng.
-"""
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUFLIT AI Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo-area">
+                <h1>HUFLIT <span class="accent">AI Search</span></h1>
+                <p>Hệ thống RAG tiên tiến tìm kiếm thông tin học vụ</p>
+            </div>
+        </header>
+
+        <!-- Search Area -->
+        <main>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Nhập câu hỏi của bạn (VD: Học phí học kỳ 2 năm 2024)..." autocomplete="off">
+                <button id="searchBtn">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+                <div id="suggestions" class="suggestions-dropdown hidden"></div>
+            </div>
+
+            <!-- Optional Toggles -->
+            <div class="controls">
+                <label class="toggle">
+                    <input type="checkbox" id="useLlmToggle" checked>
+                    <span class="slider"></span>
+                    <span class="label-text">Tư vấn viên AI (RAG)</span>
+                </label>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading-state hidden">
+                <div class="spinner"></div>
+                <p>Hệ thống AI đang đọc tài liệu và phân tích câu trả lời...</p>
+            </div>
+
+            <!-- Results Output -->
+            <div id="resultsContainer" class="results-layout hidden">
+                
+                <!-- AI Generated Answer Column -->
+                <div class="ai-answer-column" id="aiAnswerBlock">
+                    <div class="ai-header">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Tư vấn viên HUFLIT AI</span>
+                    </div>
+                    <div class="ai-content" id="aiContent">
+                        <!-- Markdown text will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Reference Documents Column -->
+                <div class="references-column">
+                    <div class="ref-header">
+                        <h3>Nguồn tài liệu tham khảo</h3>
+                        <span class="time-badge" id="timeStats">0ms</span>
+                    </div>
+                    <div id="documentResults" class="document-list">
+                        <!-- Document cards will be injected here -->
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

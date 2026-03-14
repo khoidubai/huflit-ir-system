@@ -49,6 +49,13 @@ feedback.jsonl
 .env.development.local
 .env.test.local
 .env.production.local
+.env.example
+
+# AI Models (Rất nặng, >7GB)
+models/
+*.gguf
+*.bin
+!data/index/*.bin
 
 # IDEs
 .vscode/
