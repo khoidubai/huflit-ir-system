@@ -150,10 +150,7 @@ Giao tiếp với mô hình LLM Local **Qwen2.5-7B-Instruct** (GGUF format) qua 
 
 ## 3. CẤU TRÚC DATASET (corpus.json)
 
-*(Giữ nguyên giống phiên bản trước)*
-Bao gồm `content`, `category`, `entities`, `tokens`... đại diện cho thông tin các chuyên mục như Tuyển sinh, Học phí, Lịch thi, Lịch học, Học bổng.
-
----
+Xem file CauTrucDataset.md
 
 ## 4. IR KEYWORD → MODULE MAPPING
 
