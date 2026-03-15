@@ -1,4 +1,4 @@
-Pipeline sau tham khảo ý kiến giáo viên và chỉnh lại:
+Pipeline sau tham khảo ý kiến cô T và chỉnh lại:
 
 Phase 1 – Core IR (Lexical Retrieval)
 User nhập query

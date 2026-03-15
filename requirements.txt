@@ -1,20 +1,23 @@
 # Python 3.13.9 recommended
 
-
+# Crawler
 requests
 beautifulsoup4
 lxml
-
 scrapy
-requests
-beautifulsoup4
-lxml
+playwright
+
+# NLP & IR
 underthesea
 scikit-learn
 rank-bm25
 faiss-cpu
 sentence-transformers
+
+# LLM
 llama-cpp-python
+
+# API & Server
 fastapi
 uvicorn
 pydantic

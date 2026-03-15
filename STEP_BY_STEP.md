@@ -26,7 +26,8 @@ copy .env.example .env
 
 ```powershell
 # Bước 2.1: Chạy crawler để lấy HTML thô
-python crawler/spider.py --start-url https://portal.huflit.edu.vn --max-pages 500
+
+Xem file CRAWL_AUTH_GUIDE.md
 
 # Bước 2.2: Trích xuất thông tin từ HTML
 python crawler/parser.py --input data/raw/ --output data/processed/corpus_raw.json
@@ -35,7 +36,7 @@ python crawler/parser.py --input data/raw/ --output data/processed/corpus_raw.js
 python crawler/cleaner.py --input data/processed/corpus_raw.json --output data/processed/corpus.json
 ```
 
-**Kết quả:** File `data/processed/corpus.json` chứa ~193 tài liệu sạch.
+**Kết quả:** File `data/processed/corpus.json` chứa 193 tài liệu sạch.
 
 ---
 
