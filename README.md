@@ -221,16 +221,6 @@ Với `k` thường bằng 60, cộng điểm cho tài liệu d nằm trong top 
 
 ---
 
-## 7. BIẾN MÔI TRƯỜNG (.env)
-
-| Biến | Mô tả | Giá trị mặc định |
-|------|--------|------------------|
-| `LLM_MODEL` | Đường dẫn file GGUF model | `models/Qwen2.5-7B-Instruct-Q4_K_M.gguf` |
-| `HF_HUB_CACHE` | Thư mục cache HuggingFace | `models/bge_cache/` |
-| `HF_HUB_OFFLINE` | Chế độ Offline (không cần internet) | `1` |
-| `BM25_K1` | Tham số BM25 | `1.5` |
-| `CRAWL_DELAY` | Delay giữa các request crawl (giây) | `1` |
-
 ## KIẾN TRÚC TỔNG QUAN RAG:
 
 ```mermaid

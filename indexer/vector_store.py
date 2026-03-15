@@ -30,10 +30,11 @@ def create_dense_index(corpus_path, output_dir, model_name='BAAI/bge-m3'):
     docs_text = []
     doc_ids = []
     
-    for doc in corpus:
+    for idx, doc in enumerate(corpus):
         text = f"{doc.get('title', '')}. {doc.get('content', '')}"
         docs_text.append(text)
-        doc_ids.append(doc.get('id'))
+        # Use URL as doc_id, fallback to index if URL missing
+        doc_ids.append(doc.get('url', f'doc_{idx}'))
         
     print(f"Encoding {len(docs_text)} documents... This may take a while.")
     start_time = time.time()

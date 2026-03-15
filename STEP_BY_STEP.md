@@ -1,7 +1,5 @@
 # Hướng dẫn sử dụng Hệ thống Tìm kiếm Thông minh HUFLIT (TODO List)
 
-Dưới đây là thứ tự các bước cần thực thi để cài đặt và vận hành hệ thống.
-
 ---
 
 ## Bước 1. Thiết lập môi trường
@@ -64,10 +62,10 @@ python indexer/vector_store.py --corpus data/processed/corpus.json
 
 ```powershell
 # Chạy tìm kiếm KHÔNG có LLM (chỉ Phase 1 + Phase 2)
-python test_search.py "Học phí HK2 khoá k29 là bao nhiêu?"
+python test_search.py "Tôi cần tìm hoạt động tích điểm rèn luyện mới nhất"
 
 # Chạy tìm kiếm CÓ LLM (Phase 1 + Phase 2 + Phase 3 RAG)
-python test_search.py "Học phí HK2 khoá k29 là bao nhiêu?" --use_llm
+python test_search.py "Tôi cần tìm hoạt động tích điểm rèn luyện mới nhất" --use_llm
 ```
 
 **Tham số tuỳ chỉnh:**
