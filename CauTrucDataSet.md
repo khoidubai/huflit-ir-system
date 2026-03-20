@@ -16,22 +16,13 @@
   "content": "Trường Đại học Ngoại ngữ - Tin học TP.HCM thông báo...",
   "url": "https://portal.huflit.edu.vn/tuyen-sinh/dai-hoc-2024",
   "category": "Tuyển sinh",
-  "date": "2024-03-15",
-  "content": "Trường Đại học Ngoại ngữ - Tin học TP.HCM thông báo...",
-  "keywords": ["tuyển sinh", "chỉ tiêu", "xét tuyển", "học phí"],
-  "entities": [
-    { "type": "YEAR", "value": "2024" },
-    { "type": "MONEY", "value": "12 triệu" },
-    { "type": "MAJOR", "value": "Công nghệ thông tin" }
-  ],
-  "tokens": ["trường", "đại_học", "ngoại_ngữ", "tin_học", "thông_báo"],
+  "date": "2024-03-15"
 }
 ```
 
 **Lưu ý:**
 - Trường `content` là plain text đã strip HTML, dùng cho indexing và snippet.
-- Trường `tokens` là list sau khi tokenize + remove stopwords, dùng trực tiếp khi build index, không cần tokenize lại.
-- Trường `entities` được tách lúc cleaning, lưu sẵn để tránh tách lại mỗi lần query.
+=======
 - `id` format: `huflit_XXXX` với XXXX là số thứ tự 4 chữ số, padding zero.
 - `category`: nếu không xác định được → mặc định `"Thông báo chung"`. Có thể suy ra từ URL pattern hoặc title prefix (VD: `[Điểm rèn luyện]` → "Công tác sinh viên").
 - `date`: format `YYYY-MM-DD`. Nếu không parse được ngày → dùng `null`. Document không có date không bị loại khỏi kết quả, chỉ không được boost "mới nhất".
