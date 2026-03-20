@@ -17,12 +17,6 @@
   "category": "Tuyển sinh",
   "date": "2024-03-15",
   "content": "Trường Đại học Ngoại ngữ - Tin học TP.HCM thông báo...",
-  "keywords": ["tuyển sinh", "chỉ tiêu", "xét tuyển", "học phí"],
-  "entities": [
-    { "type": "YEAR", "value": "2024" },
-    { "type": "MONEY", "value": "12 triệu" },
-    { "type": "MAJOR", "value": "Công nghệ thông tin" }
-  ],
   "tokens": ["trường", "đại_học", "ngoại_ngữ", "tin_học", "thông_báo"],
 }
 ```
@@ -30,7 +24,6 @@
 **Lưu ý:**
 - Trường `content` là plain text đã strip HTML, dùng cho indexing và snippet.
 - Trường `tokens` là list sau khi tokenize + remove stopwords, dùng trực tiếp khi build index, không cần tokenize lại.
-- Trường `entities` được tách lúc cleaning, lưu sẵn để tránh tách lại mỗi lần query.
 - `id` format: `huflit_XXXX` với XXXX là số thứ tự 4 chữ số, padding zero.
 
 ### 3.3 Các loại entity được tách
