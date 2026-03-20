@@ -18,6 +18,8 @@ copy .env.example .env
 
 **Lưu ý:** Từ bây giờ mọi lệnh Python đều phải chạy trong môi trường ảo `IR_HUFLIT`. Mỗi khi mở terminal mới, nhớ chạy `.\IR_HUFLIT\Scripts\activate` trước.
 
+#Mac: source IR_HUFLIT/bin/activate
+
 ---
 
 ## Bước 2. Crawl Data (Thu thập dữ liệu)

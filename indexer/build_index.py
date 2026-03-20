@@ -41,9 +41,11 @@ def main():
         # Lấy tokens sẵn có hoặc tokenize mới
         tokens = doc.get('tokens')
         if not tokens:
-            # Kết hợp title và content để tokenize
-            text = f"{doc.get('title', '')} {doc.get('content', '')}"
-            tokens = tokenize(text)
+            # Title boosting: tokenize title riêng và lặp lại 3 lần
+            # để BM25/TF-IDF ưu tiên match title cao hơn content
+            title_tokens = tokenize(doc.get('title', ''))
+            content_tokens = tokenize(doc.get('content', ''))
+            tokens = title_tokens * 3 + content_tokens
             
         processed_docs.append({
             'id': doc_id,
@@ -84,7 +86,7 @@ def main():
     print("Building BM25 Parameters...")
     build_bm25(processed_docs, output_dir / "bm25_params.json")
     
-    print(f"\n✅ Indexing complete! Files saved to {args.output}")
+    print(f"\n Indexing complete! Files saved to {args.output}")
     print(f"Total documents: {len(processed_docs)}")
     print(f"Total vocabulary size: {len(inv_index)}")
 

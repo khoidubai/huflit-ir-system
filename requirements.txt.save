@@ -1,0 +1,25 @@
+Python 3.13.9
+
+
+requests
+beautifulsoup4
+lxml
+
+scrapy
+requests
+beautifulsoup4
+lxml
+underthesea
+scikit-learn
+rank-bm25
+faiss-cpu
+sentence-transformers
+llama-cpp-python
+fastapi
+uvicorn
+pydantic
+python-dotenv
+schedule
+
+ source /Users/nguyenkhoi/Documents/huflit-ir-system/IR_HUFLIT/bin/activate
+

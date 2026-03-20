@@ -38,17 +38,25 @@ huflit-ir-system/
 │   ├── scheduler.py
 │   └── config.py
 │
+├── scripts/
+│   ├── generate_corpus_new.py        ← Trích xuất date → corpus_new.json
+│   ├── build_index.sh
+│   ├── run_crawler.sh
+│   └── start_api.sh
+│
 ├── data/
 │   ├── raw/
 │   ├── processed/
-│   │   └── corpus.json                ← DATASET CHÍNH (193 tài liệu)
+│   │   ├── corpus.json                ← Dataset gốc (193 tài liệu, chỉ title/content/url)
+│   │   └── corpus_new.json            ← Dataset nâng cấp (+ id, category, date)
 │   └── index/
 │       ├── inverted_index.pkl
 │       ├── tfidf_matrix.npz
 │       ├── bm25_params.json
 │       ├── faiss_index.bin            ← FAISS Dense Vector Index (BGE-M3)
 │       ├── dense_doc_ids.json
-│       ├── docs_info.json
+│       ├── doc_ids.json
+│       ├── doc_lengths.json
 │       └── vocab.json
 │
 ├── indexer/
@@ -95,32 +103,37 @@ huflit-ir-system/
 
 ### 2.2 data/
 
-Lưu trữ HTML gốc, `corpus.json` chuẩn hoá, và các file Index đã build (BM25, Inverted Index, TF-IDF matric, vocab).
+Lưu trữ HTML gốc và dữ liệu đã xử lý:
+- **`corpus.json`** — Dataset gốc (193 docs): chỉ có `title`, `content`, `url`.
+- **`corpus_new.json`** — Dataset nâng cấp: thêm `id` (huflit_XXXX), `category` (cần fill thủ công), `date` (tự trích xuất, 139/193 docs có date, 54 docs null).
+- **`data/index/`** — Các file chỉ mục đã build: BM25 params, Inverted Index, TF-IDF matrix, FAISS vectors, vocab, doc_ids.
 
 ---
 
 ### 2.3 indexer/
 
-**tokenizer.py / inverted_index.py / tfidf.py / bm25.py**
-Tạo và serialize các model Sparse. Dùng thuật toán TF-IDF, BM25, Inverted Index xử lý `corpus.json`.
-**vector_store.py**
-Nhúng (Embed) document thành vector dày (Dense Vector) tạo thành FAISS ANN index lưu dưới disk. Phase 2 dùng để tính vector cực nhanh.
+**tokenizer.py**
+Tokenize tiếng Việt bằng `underthesea`. Có **Unigram Fallback**: compound token (VD: `tích_điểm`) tự động tách thêm từ đơn (`tích`, `điểm`) để tăng recall.
+**inverted_index.py / tfidf.py / bm25.py**
+Tạo và serialize các model Sparse. Dùng thuật toán TF-IDF (bigram), BM25 Okapi (k1=1.5, b=0.75), Inverted Index.
 **build_index.py**
-File tổng hợp để chạy Indexing.
+File tổng hợp để chạy Indexing. Có **Title Boosting**: title tokens được lặp 3 lần (`title_tokens * 3 + content_tokens`) để BM25/TF-IDF ưu tiên match title.
+**vector_store.py**
+Nhúng (Embed) document thành Dense Vector bằng BGE-M3 → FAISS ANN index. Doc IDs dùng format `huflit_XXXX` đồng bộ với Lexical index.
 
 ---
 
 ### 2.4 retrieval/ (Phase 1 & Phase 2)
 
 **query_processor.py**
-Tiền xử lý: lowercase → tokenize → remove stopwords → synonym expansion. 
-**entity_extractor.py**
-Tách Named Entities (SEMESTER, MONEY, MAJOR) để tạo category boost/filter.
-**exact_match.py**
+Tiền xử lý: lowercase → tokenize (với unigram fallback) → remove stopwords → synonym expansion.
+**entity_extractor.py** *(chưa tích hợp vào pipeline chính)*
+Tách Named Entities (SEMESTER, MONEY, MAJOR) — sẽ dùng cho category filtering trong tương lai.
+**exact_match.py** *(chưa tích hợp vào pipeline chính)*
 Boolean search với ngoặc kép "".
 
 **lexical_retrieval.py** (Phase 1)
-Tính điểm Sparse: tìm candidates qua TF-IDF, BM25 và Language Model Dirichlet. Trả về top-K lexical candidates.
+Tính điểm Sparse: tìm candidates qua TF-IDF + BM25. Trả về top-K lexical candidates.
 **embedder.py** (Phase 2)
 Encode user query thành dense vector (sử dụng Multilingual model).
 **rrf_merge.py** (Phase 2)
@@ -148,9 +161,21 @@ Giao tiếp với mô hình LLM Local **Qwen2.5-7B-Instruct** (GGUF format) qua 
 
 ---
 
-## 3. CẤU TRÚC DATASET (corpus.json)
+## 3. CẤU TRÚC DATASET
 
-Xem file CauTrucDataset.md
+Xem chi tiết tại `CauTrucDataSet.md`. Schema hiện tại (`corpus_new.json`):
+```json
+{
+  "id": "huflit_0001",
+  "title": "Thông báo tuyển sinh đại học chính quy năm 2024",
+  "content": "Trường Đại học Ngoại ngữ - Tin học TP.HCM thông báo...",
+  "url": "https://portal.huflit.edu.vn/tuyen-sinh/dai-hoc-2024",
+  "category": "Tuyển sinh",
+  "date": "2024-03-15"
+}
+```
+- `category`: mặc định "Thông báo chung" nếu không xác định. Cần fill thủ công.
+- `date`: format YYYY-MM-DD, `null` nếu không parse được. Tokens không lưu trong corpus — tính on-the-fly khi build index.
 
 ## 4. IR KEYWORD → MODULE MAPPING
 
@@ -170,13 +195,9 @@ Xem file CauTrucDataset.md
 ```
 User nhập query
     ↓
-[query_processor.py]    lowercase → tokenize → remove stopwords → synonym expand
+[query_processor.py]    lowercase → tokenize (+ unigram fallback) → remove stopwords → synonym expand
     ↓
-[entity_extractor.py]   tách entities → xác định category filter
-    ↓
-[exact_match.py]        nếu query có dấu "" → phrase search trong inverted index
-    ↓
-[lexical_retrieval.py]  tìm candidate docs bằng TF-IDF, BM25, LM Dirichlet
+[lexical_retrieval.py]  tìm candidate docs bằng TF-IDF + BM25 (title đã được boost 3x)
     ↓
 Trả về top-K lexical candidates
 ```
@@ -185,11 +206,11 @@ Trả về top-K lexical candidates
 ```
 User query
     ↓
-[embedder.py]           query → dense vector (multilingual embedding model)
+[embedder.py]           query → dense vector (BGE-M3 multilingual)
     ↓
-[vector_store.py]       FAISS ANN search → top-20 dense candidates
+[FAISS index]           ANN search → top-20 dense candidates
     ↓
-[rrf_merge.py]          gộp ranking từ lexical_retrieval và dense retrieval
+[rrf_merge.py]          gộp ranking từ lexical (Phase 1) và dense retrieval
     ↓
 [reranker.py]           cross-encoder re-rank top-10 → top-3
 ```
@@ -198,9 +219,9 @@ User query
 ```
 Top-3 documents
     ↓
-[context_builder.py]    ghép title + snippet của top-3
+[context_builder.py]    ghép title + category + date + snippet của top-3
     ↓
-[answer_generator.py]   LLM đọc query + context
+[answer_generator.py]   LLM đọc query + context (Qwen2.5-7B Local)
     ↓
 Trả về: Answer text + Source links
 ```
@@ -223,23 +244,21 @@ Với `k` thường bằng 60, cộng điểm cho tài liệu d nằm trong top 
 ```mermaid
 graph TD
     A[User Query] --> B[Query Processor]
-    B --> C[Entity Extractor]
-    
-    C --> D[Lexical Retrieval / Phase 1]
-    C --> E[Dense Embedder]
+    B -->|tokens| D[Lexical Retrieval / Phase 1]
+    B -->|raw query| E[Dense Embedder BGE-M3]
     E --> F[FAISS Vector Store]
     
-    D --> G[RRF Merge]
-    F --> G
+    D -->|top-20 lexical| G[RRF Merge]
+    F -->|top-20 dense| G
     
     G --> H[Cross-encoder Reranker / Phase 2]
     
     H --> I[Top 3 Documents]
     
     I --> J[Context Builder / Phase 3]
-    J --> K[LLM Default Qwen/Gemini]
+    J --> K[Qwen2.5-7B Local GGUF]
     
-    K[Qwen2.5-7B Local GGUF] --> L[Trả về kết quả UI]
+    K --> L[Trả về kết quả UI]
 ```
 
 ## 9. HƯỚNG DẪN CHẠY HỆ THỐNG

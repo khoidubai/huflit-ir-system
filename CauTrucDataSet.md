@@ -13,10 +13,17 @@
 {
   "id": "huflit_0001",
   "title": "Thông báo tuyển sinh đại học chính quy năm 2024",
+  "content": "Trường Đại học Ngoại ngữ - Tin học TP.HCM thông báo...",
   "url": "https://portal.huflit.edu.vn/tuyen-sinh/dai-hoc-2024",
   "category": "Tuyển sinh",
   "date": "2024-03-15",
   "content": "Trường Đại học Ngoại ngữ - Tin học TP.HCM thông báo...",
+  "keywords": ["tuyển sinh", "chỉ tiêu", "xét tuyển", "học phí"],
+  "entities": [
+    { "type": "YEAR", "value": "2024" },
+    { "type": "MONEY", "value": "12 triệu" },
+    { "type": "MAJOR", "value": "Công nghệ thông tin" }
+  ],
   "tokens": ["trường", "đại_học", "ngoại_ngữ", "tin_học", "thông_báo"],
 }
 ```
@@ -24,21 +31,12 @@
 **Lưu ý:**
 - Trường `content` là plain text đã strip HTML, dùng cho indexing và snippet.
 - Trường `tokens` là list sau khi tokenize + remove stopwords, dùng trực tiếp khi build index, không cần tokenize lại.
+- Trường `entities` được tách lúc cleaning, lưu sẵn để tránh tách lại mỗi lần query.
 - `id` format: `huflit_XXXX` với XXXX là số thứ tự 4 chữ số, padding zero.
+- `category`: nếu không xác định được → mặc định `"Thông báo chung"`. Có thể suy ra từ URL pattern hoặc title prefix (VD: `[Điểm rèn luyện]` → "Công tác sinh viên").
+- `date`: format `YYYY-MM-DD`. Nếu không parse được ngày → dùng `null`. Document không có date không bị loại khỏi kết quả, chỉ không được boost "mới nhất".
+- Tokens **không lưu** trong corpus.json — được tính on-the-fly khi build index bởi `build_index.py`.
 
-### 3.3 Các loại entity được tách
-
-| type | Mô tả | Ví dụ |
-|------|-------|-------|
-| DATE | Ngày tháng cụ thể | 15/3/2024, ngày 6/1/2025 |
-| MONEY | Số tiền | 16.500.000 VNĐ, 12 triệu |
-| SEMESTER | Học kỳ | học kỳ I, HK2 2024-2025 |
-| GRADE | GPA hoặc điểm | GPA 3.6, điểm 2.0 |
-| CERTIFICATE | Chứng chỉ | B1, IELTS 6.0, TOEFL 80 |
-| MAJOR | Ngành học | Công nghệ thông tin, Ngôn ngữ Anh |
-| CREDIT | Số tín chỉ | 120 tín chỉ, 12 tín chỉ |
-| ACADEMIC_YEAR | Năm học | 2024-2025 |
-| PERCENTAGE | Phần trăm | 100% học phí, 50% chi phí |
 
 ### 3.4 Danh sách category được giới hạn trong phạm vi đề tài
 

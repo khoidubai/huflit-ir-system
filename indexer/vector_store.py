@@ -33,8 +33,8 @@ def create_dense_index(corpus_path, output_dir, model_name='BAAI/bge-m3'):
     for idx, doc in enumerate(corpus):
         text = f"{doc.get('title', '')}. {doc.get('content', '')}"
         docs_text.append(text)
-        # Use URL as doc_id, fallback to index if URL missing
-        doc_ids.append(doc.get('url', f'doc_{idx}'))
+        # Use same ID scheme as build_index.py for consistency
+        doc_ids.append(doc.get('id', f"huflit_{idx+1:04d}"))
         
     print(f"Encoding {len(docs_text)} documents... This may take a while.")
     start_time = time.time()

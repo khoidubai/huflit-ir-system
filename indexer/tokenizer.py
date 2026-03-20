@@ -31,10 +31,19 @@ def tokenize(text):
 
     # Làm sạch: bỏ khoảng trắng thừa, bỏ stopwords, bỏ token quá ngắn
     # Chú ý: underthesea tách từ có thể chứa dấu gạch dưới (vd: đại_học)
-    clean_tokens = [
-        t.replace(' ', '_') for t in tokens 
-        if t.strip() and t.strip() not in STOPWORDS and len(t.strip()) > 1
-    ]
+    clean_tokens = []
+    for t in tokens:
+        t = t.strip()
+        if not t or t in STOPWORDS or len(t) <= 1:
+            continue
+        compound = t.replace(' ', '_')
+        clean_tokens.append(compound)
+        # Unigram fallback: tách compound token thành từ đơn để tăng recall
+        # VD: "tích_điểm" -> thêm "tích", "điểm" giúp match với doc chứa "điểm"
+        if '_' in compound:
+            for part in compound.split('_'):
+                if part and part not in STOPWORDS and len(part) > 1:
+                    clean_tokens.append(part)
 
     return clean_tokens
 

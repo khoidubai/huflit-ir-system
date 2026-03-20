@@ -1,88 +1,126 @@
 # Hướng phát triển (Advanced Metadata & Hybrid Retrieval)
 
-Dựa trên cấu trúc lý tưởng từ file `CauTrucDataSet.md`, so với dữ liệu thực tế hiện tại (`corpus.json`) + áp dụng các kỹ thuật tinh gọn và chống ảo giác (Zero Hallucination) => hiệu quả hơn.
+Dựa trên cấu trúc lý tưởng từ file `CauTrucDataSet.md`, dataset đã được nâng cấp thêm 2 trường metadata: `category` và `date`. File `corpus_new.json` hiện có 193 docs với schema: `{id, title, content, url, category, date}`. Áp dụng các kỹ thuật tinh gọn và chống ảo giác (Zero Hallucination) => hiệu quả hơn.
 
-Dưới đây là kế hoạch chi tiết sau khi cấu trúc manual dataset:
+## Mục tiêu
+- Tối ưu hóa chất lượng trả lời thông tin cho sinh viên HUFLIT
+- Tăng độ chính xác và độ tin cậy của kết quả tìm kiếm
+- Giảm thời gian xử lý và chi phí tính toán
+
+Dưới đây là kế hoạch khai thác 2 trường mới này:
 
 ---
 
 ## Phần 1: Các Tính Năng Có Thể Khai Thác
 
-### 1. Hard-Filtering (Lọc Metadata) Trước Khi Vector Search
-- **Vấn đề cũ:** Khi crawl tự động, mọi thứ chỉ là text. Nếu user tìm "Học phí ngành CNTT 2024", thuật toán Semantic Search có thể mang nhầm thông báo "Học bổng năm 2024" vì độ tương đồng ngữ nghĩa cao.
-- **Khai thác mới:** Dùng trường `category` và `entities`.
-- **Luồng xử lý:** Câu hỏi user -> Phân loại ý định (Rút trích category "Học phí", entity "2024") -> Lọc SQL/ChromaDB để chỉ lấy các document đúng category và năm -> Mới đem đi tính khoảng cách Vector.
-- **Lợi ích:** Độ chính xác tăng, tốc độ search nhanh hơn do đã khoanh vùng dữ liệu cực nhỏ.
+### 1. Hard-Filtering theo Category (Lọc Metadata Trước Khi Search)
+- **Vấn đề cũ:** Khi crawl tự động, mọi thứ chỉ là text. Nếu user tìm "Học phí ngành CNTT 2024", Semantic Search có thể mang nhầm "Học bổng năm 2024" vì độ tương đồng ngữ nghĩa cao.
+- **Khai thác mới:** Dùng trường `category` để pre-filter.
+- **Luồng xử lý:**
+  1. Query Processor phân tích câu hỏi → rút trích category (VD: "Học phí ngành CNTT" → `category = "Học phí"`).
+  2. Lọc corpus chỉ giữ docs đúng category **trước khi** chạy BM25/Vector Search.
+  3. Nếu không detect được category → search toàn bộ (fallback an toàn).
+- **Lợi ích:** Độ chính xác tăng, tốc độ nhanh hơn do khoanh vùng dữ liệu nhỏ.
 
-### 2. Time-Aware Retrieval (Tìm Kiếm Theo Thời Gian Thực)
-- **Vấn đề cũ:** Không biết thông báo nào mới, thông báo nào cũ.
-- **Khai thác mới:** Dùng trường `date`.
-- **Luồng xử lý:** Tích hợp hàm Time Decay (phân rã thời gian) vào cấu trúc BM25/TF-IDF hoặc RRF Merger. Document nào có `date` càng gần hiện tại, điểm (score) càng được boost lên.
-- **Lợi ích:** Đảm bảo sinh viên luôn đọc được thông báo tuyển sinh/học phí mới nhất, tránh lấy văn bản cũ của năm 2021.
+### 2. Time-Aware Retrieval (Tìm Kiếm Ưu Tiên Thời Gian)
+- **Vấn đề cũ:** Không biết thông báo nào mới, thông báo nào cũ. Query "mới nhất" trả về doc năm 2020.
+- **Khai thác mới:** Dùng trường `date` (139/193 docs có date, 54 docs date=null).
+- **Luồng xử lý:**
+  1. Tích hợp hàm **Time Decay** vào RRF Merger hoặc sau Cross-Encoder Reranker.
+  2. Công thức: `final_score = relevance_score + alpha * time_boost(date)`, trong đó `time_boost` giảm dần theo khoảng cách ngày so với hiện tại.
+  3. Docs không có date (`null`) → `time_boost = 0` (không bị penalty, chỉ không được boost).
+  4. Chỉ kích hoạt khi query chứa tín hiệu thời gian ("mới nhất", "gần đây", "năm 2025").
+- **Lợi ích:** Đảm bảo sinh viên luôn đọc được thông báo mới nhất, tránh lấy văn bản cũ.
 
-### 3. Entity Injection - Chống Ảo Giác (Zero Hallucination) cho LLM (Phase 3)
-- **Vấn đề cũ:** LLM có thể đọc sai các con số học phí, số tín chỉ nằm rải rác trong đoạn văn dài.
-- **Khai thác mới:** Dùng trường `entities` (MONEY, MAJOR, DATE...).
-- **Luồng xử lý:** Bơm thẳng mảng `entities` vào Prompt của Context, thay vì chỉ ném `content` thô.
-- **Lợi ích:** Ép LLM Qwen 2.5 phải chú ý đến các tham số cực kỳ quan trọng do con người đã chuẩn bị, loại bỏ hoàn toàn khả năng bịa ra số liệu.
-
-### 4. Tối Ưu Tốc Độ Lexical Search (Phase 1)
-- **Vấn đề cũ:** Mỗi lần tạo chỉ mục BM25 hoặc query, hệ thống phải chạy thư viện `underthesea` để cắt từ tiếng Việt, việc này tốn nhiều tài nguyên CPU.
-- **Khai thác mới:** Tận dụng trực tiếp mảng `tokens` và `keywords` đã xử lý sẵn.
-- **Luồng xử lý:** Bỏ qua hàm `tokenize(text)` khi đọc `corpus.json` vào bộ nhớ. Load thẳng mảng `tokens` vào bộ đếm BM25 và TF-IDF Indexer.
-- **Lợi ích:** Cải thiện tốc độ khởi động (cold-start) và giảm tải CPU hơn 50% trong Phase 1.
-
-### 5. Xây Dựng RAG Prompt Giàu Ngữ Nghĩa (Rich Context)
-- **Vấn đề cũ:** Template đưa cho LLM chỉ có `[Title] - [Content]`.
-- **Khai thác mới:** Gắn toàn bộ metadata vào Prompt. LLM nhận được một bản tóm tắt cực xịn trước khi đọc chi tiết.
+### 3. Xây Dựng RAG Prompt Giàu Ngữ Nghĩa (Rich Context)
+- **Vấn đề cũ:** Template đưa cho LLM chỉ có `[Title] - [Content]`. LLM không biết context thời gian hay chuyên mục.
+- **Khai thác mới:** Gắn `category` và `date` vào Prompt → LLM hiểu rõ hơn về ngữ cảnh tài liệu.
 - Cấu trúc Prompt Context dự kiến:
   ```text
   [Tài Liệu 1]:
   - Tiêu đề: {title}
   - Danh mục: {category} | Ngày đăng: {date}
-  - Trọng tâm (Keywords): {keywords}
-  - Thực thể (Entities): {entities}
-  - Nội dung chí tiết: {content}
+  - Nội dung: {content}
+  - Nguồn: {url}
   ```
+- **Lợi ích:** LLM có thể trả lời chính xác hơn, VD: "Theo thông báo ngày 15/03/2026 thuộc mục Học phí,..." thay vì trả lời chung chung.
 
 ---
 
-## Phần 2: Data Flow & Architecture
+## Phần 2: Các File Cần Thay Đổi
 
-Nếu áp dụng cấu trúc Manual Dataset (`CauTrucDataSet.md`), các file sau trong hệ thống sẽ cần được thiết kế lại:
+Sau khi chuyển sang `corpus_new.json` (có `category` + `date`), các file sau cần update:
 
-### 1. `indexer/build_index.py` (Chỉ Mục Lexical)
-- **Thay đổi:** 
-  - Đọc thẳng field `"tokens"` để build BM25/TF-IDF thay vì cắt từ thủ công lại từ field `"content"`.
-  - Lưu metadata (`category`, `date`, `keywords`) vào Inverted Index để phục vụ Filter.
-- **Hành động:** Viết lại hàm `load_corpus()`.
+### 1. `retrieval/query_processor.py` — Thêm Intent Extractor
+- **Hiện tại:** Chỉ tokenize query + synonym expansion.
+- **Cần thêm:** Rule-based extractor rút trích `category` và tín hiệu thời gian từ câu hỏi.
+  - VD: "Học phí ngành CNTT 2024" → `filters = {"category": "Học phí"}`
+  - VD: "hoạt động ĐRL mới nhất" → `time_aware = True`
+- **Cách làm:** Map từ khóa → category dựa trên bảng category trong `CauTrucDataSet.md`. Detect từ khóa thời gian ("mới nhất", "gần đây", "năm 2025").
 
-### 2. `indexer/vector_store.py` (Chỉ Mục Vector Dense)
-- **Thay đổi:** 
-  - Thay vì xài FAISS (thuần Vector), sẽ chuyển sang **ChromaDB** hoặc cập nhật metadata schema nếu dùng FAISS.
-  - ChromaDB lý tưởng hơn vì hỗ trợ Metadata Filtering cực mạnh. Lưu `category` và `date` thành `metadata` đi kèm mỗi vector.
+### 2. `retrieval/lexical_retrieval.py` — Nhận thêm `filters`
+- **Hiện tại:** `get_candidates(tokens, top_k)` search toàn bộ corpus.
+- **Cần thêm:** Tham số `category_filter` để chỉ tính BM25 trên subset docs đúng category.
+- **Cách làm:** Load metadata từ corpus, lọc `doc_ids` theo category trước khi tính score.
 
-### 3. `retrieval/query_processor.py` (Phân Tích Câu Hỏi)
-- **Thay đổi:** 
-  - (New Feature) Thêm bộ phân tích câu hỏi (Intent Extractor). Ví dụ: Nhận diện câu hỏi có chứa số (nền tảng year), chứa từ khóa "Học phí" -> Tạo `filters = {"category": "Học phí", "year": "2024"}`.
-- **Hành động:** Nâng cấp rule-based NLP hoặc dùng thử NER nhẹ nhàng.
+### 3. `retrieval/rrf_merge.py` — Thêm Time Decay Boost
+- **Hiện tại:** RRF chỉ dựa trên rank position.
+- **Cần thêm:** Nếu `time_aware = True`, cộng thêm `time_boost` vào RRF score.
+- **Công thức:** `time_boost = alpha / (1 + days_since_publish)`, với `alpha` là hệ số tuning.
+- Docs có `date = null` → `time_boost = 0`.
 
-### 4. `retrieval/lexical_retrieval.py` & `retrieval/embedder.py` (Tìm Kiếm)
-- **Thay đổi:** 
-  - Các hàm `search()` nay đều phải nhận thêm tham số `filters` từ Query Processor.
-  - Áp dụng bộ lọc trước khi retrieve. Bổ sung trích thưởng điểm dựa trên field `"date"`.
-- **Hành động:** Update params và logic tìm điểm.
+### 4. `rag/context_builder.py` — Gắn metadata vào Prompt
+- **Hiện tại:** Chỉ truyền title + content + url.
+- **Cần thêm:** Gắn `category` và `date` vào template để LLM có thêm ngữ cảnh.
 
-### 5. `rag/context_builder.py` (Xây Dựng Khung RAG)
-- **Thay đổi:** 
-  - Sửa đổi chuỗi f-string định dạng tài liệu. Nối các metadata (category, date, entities, keywords) một cách rõ ràng kèm theo URL để hệ thống trả về thông minh hơn.
-- **Hành động:** Xóa code cũ, viết lại hàm tạo chuỗi snippet với template rich-text như đã trình bày ở Phần 1.5.
+### 5. `test_search.py` & `api/` — Load corpus_new.json
+- **Thay đổi:** Đổi path corpus từ `corpus.json` → `corpus_new.json`.
+- Cập nhật `corpus_metadata` để include `category`, `date`.
 
-### 6. `api/routes/search.py` (Đầu Mối Controller)
-- **Thay đổi:** 
-  - Update payload API để nhận và log quá trình lọc metadata. 
-  - Luồng mới: Câu hỏi -> Extract Metadata Filter -> (Lexical & Vector Search với Filters) -> RRF Merger (sắp xếp thêm điểm thời gian) -> Context Builder với cấu trúc mới -> LLM sinh câu.
+### 6. `indexer/build_index.py` — Lưu metadata index
+- **Cần thêm:** Xuất thêm file `doc_metadata.json` chứa `{doc_id: {category, date}}` để lexical retrieval có thể filter mà không cần load toàn bộ corpus.
 
 ---
 
-**NOTE:** Việc update này không cần đập code hiện tại, mà là **nắm lấy metadata và chèn nó vào các ngách của Data Flow**, tận dụng tối đa thông tin ngữ nghĩa đã được xử lý tay từ trước để LLM có thể dễ dàng hiểu câu hỏi và đáp ứng nhanh gọn lẹ.
+## Phần 3: Luồng Xử Lý Mới (Data Flow)
+
+```
+Câu hỏi user
+  │
+  ▼
+Query Processor (tokenize + extract category + detect time signal)
+  │
+  ├── category_filter: "Học phí" (hoặc None)
+  ├── time_aware: True/False
+  ├── tokens: ["học_phí", "học", "phí", "ngành", "cntt"]
+  │
+  ▼
+┌─────────────────────────────────────────┐
+│  Phase 1: Lexical (BM25 + TF-IDF)      │ ← filter by category
+│  Phase 2: Dense (FAISS + BGE-M3)       │ ← filter by category
+└─────────────────────────────────────────┘
+  │
+  ▼
+RRF Merger (+ Time Decay boost nếu time_aware=True)
+  │
+  ▼
+Cross-Encoder Reranker (top 10 → top K)
+  │
+  ▼
+Context Builder (title + category + date + content + url)
+  │
+  ▼
+LLM sinh câu trả lời (Qwen2.5-7B)
+```
+
+---
+
+**NOTE:** Không cần đập code hiện tại. Chỉ cần **chèn metadata vào các điểm nối** của pipeline: filter trước search, boost sau RRF, gắn vào prompt trước LLM.
+
+
+### Tóm tắt
+- **Mục tiêu:** Tối ưu hóa chất lượng trả lời thông tin cho sinh viên HUFLIT
+- **Cách làm:** Chèn metadata vào các điểm nối của pipeline: filter trước search, boost sau RRF, gắn vào prompt trước LLM
+- **Kết quả:** Tăng độ chính xác và độ tin cậy của kết quả tìm kiếm, giảm thời gian xử lý và chi phí tính toán
+
+Góp ý mới nhất -> nếu kq search quá tốt mà k cần model phức t
